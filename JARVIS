@@ -1,0 +1,63 @@
+import openai
+import requests
+
+# Replace with your actual OpenAI API key and GitHub token
+openai.api_key = 'your-openai-api-key'
+github_token = 'your-github-token'
+
+# GitHub API headers
+headers = {
+    "Authorization": f"token {github_token}",
+    "Accept": "application/vnd.github.v3+json"
+}
+
+def chat_with_jarvis(prompt):
+    response = openai.ChatCompletion.create(
+        model="gpt-4",  # Specify the model you want to use
+        messages=[
+            {"role": "system", "content": "You are JARVIS, a helpful assistant that can also interact with GitHub."},
+            {"role": "user", "content": prompt}
+        ]
+    )
+    return response['choices'][0]['message']['content']
+
+def interact_with_github(command, repo, issue_title=None, issue_body=None):
+    base_url = "https://api.github.com"
+    if command == "create_issue":
+        url = f"{base_url}/repos/{repo}/issues"
+        data = {
+            "title": issue_title,
+            "body": issue_body
+        }
+        response = requests.post(url, headers=headers, json=data)
+        return response.json()
+    elif command == "list_issues":
+        url = f"{base_url}/repos/{repo}/issues"
+        response = requests.get(url, headers=headers)
+        return response.json()
+    else:
+        return {"message": "Unknown GitHub command."}
+
+if __name__ == "__main__":
+    print("Welcome to JARVIS. How can I assist you today?")
+    while True:
+        user_input = input("You: ")
+        if user_input.lower() in ['exit', 'quit']:
+            print("JARVIS: Goodbye!")
+            break
+        elif user_input.startswith("github"):
+            parts = user_input.split()
+            command = parts[1]
+            repo = parts[2]
+            if command == "create_issue":
+                issue_title = input("Enter issue title: ")
+                issue_body = input("Enter issue body: ")
+                response = interact_with_github(command, repo, issue_title, issue_body)
+            elif command == "list_issues":
+                response = interact_with_github(command, repo)
+            else:
+                response = {"message": "Invalid GitHub command."}
+            print(f"JARVIS: {response}")
+        else:
+            response = chat_with_jarvis(user_input)
+            print(f"JARVIS: {response}")
